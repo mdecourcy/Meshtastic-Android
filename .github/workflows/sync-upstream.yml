@@ -42,28 +42,34 @@ jobs:
             echo "Sync needed - upstream has new commits"
           fi
 
-      - name: Sync main branch (fast-forward only)
+      - name: Sync main branch (mirror upstream)
         if: steps.check_sync.outputs.already_synced == 'false'
         run: |
           git checkout main
-          # Try fast-forward first (clean, no merge commits)
-          if git merge upstream/main --ff-only; then
-            echo "✅ Fast-forward merge successful"
-          else
-            # If fast-forward fails, we have diverged - try rebase to keep linear history
-            echo "⚠️  Cannot fast-forward, attempting rebase..."
-            git rebase upstream/main || {
-              echo "::error::Rebase failed - manual intervention required"
-              git rebase --abort
-              exit 1
-            }
-          fi
+          # Reset main to be identical to upstream (no custom commits)
+          git reset --hard upstream/main
+          echo "✅ Main branch reset to match upstream"
 
-      - name: Push changes
+      - name: Push main
         if: steps.check_sync.outputs.already_synced == 'false'
         run: |
-          # Use force-with-lease to safely push rebased commits
           git push origin main --force-with-lease
+
+      - name: Update fork-customizations branch
+        if: steps.check_sync.outputs.already_synced == 'false'
+        run: |
+          # Update fork-customizations with latest upstream changes
+          git checkout fork-customizations || exit 0
+          git rebase upstream/main || {
+            echo "::warning::Could not auto-rebase fork-customizations, skipping"
+            git rebase --abort
+            exit 0
+          }
+          git push origin fork-customizations --force-with-lease || {
+            echo "::warning::Could not push fork-customizations, skipping"
+            exit 0
+          }
+          echo "✅ Fork-customizations updated"
 
       - name: Report sync status
         if: steps.check_sync.outputs.already_synced == 'false'
