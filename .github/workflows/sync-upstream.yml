@@ -42,16 +42,28 @@ jobs:
             echo "Sync needed - upstream has new commits"
           fi
 
-      - name: Sync main branch
+      - name: Sync main branch (fast-forward only)
         if: steps.check_sync.outputs.already_synced == 'false'
         run: |
           git checkout main
-          git merge upstream/main --no-edit
+          # Try fast-forward first (clean, no merge commits)
+          if git merge upstream/main --ff-only; then
+            echo "✅ Fast-forward merge successful"
+          else
+            # If fast-forward fails, we have diverged - try rebase to keep linear history
+            echo "⚠️  Cannot fast-forward, attempting rebase..."
+            git rebase upstream/main || {
+              echo "::error::Rebase failed - manual intervention required"
+              git rebase --abort
+              exit 1
+            }
+          fi
 
       - name: Push changes
         if: steps.check_sync.outputs.already_synced == 'false'
         run: |
-          git push origin main
+          # Use force-with-lease to safely push rebased commits
+          git push origin main --force-with-lease
 
       - name: Report sync status
         if: steps.check_sync.outputs.already_synced == 'false'
