@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 23,
-    "identityHash": "51f5f6ebc6ef9d279deb9944746fad68",
+    "identityHash": "5002fbc85d7f648104d6828449af299f",
     "entities": [
       {
         "tableName": "my_node",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`myNodeNum` INTEGER NOT NULL, `model` TEXT, `firmwareVersion` TEXT, `couldUpdate` INTEGER NOT NULL, `shouldUpdate` INTEGER NOT NULL, `currentPacketId` INTEGER NOT NULL, `messageTimeoutMsec` INTEGER NOT NULL, `minAppVersion` INTEGER NOT NULL, `maxChannels` INTEGER NOT NULL, `hasWifi` INTEGER NOT NULL, `deviceId` TEXT, PRIMARY KEY(`myNodeNum`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`myNodeNum` INTEGER NOT NULL, `model` TEXT, `firmwareVersion` TEXT, `bootloaderVersion` TEXT, `couldUpdate` INTEGER NOT NULL, `shouldUpdate` INTEGER NOT NULL, `currentPacketId` INTEGER NOT NULL, `messageTimeoutMsec` INTEGER NOT NULL, `minAppVersion` INTEGER NOT NULL, `maxChannels` INTEGER NOT NULL, `hasWifi` INTEGER NOT NULL, `deviceId` TEXT, PRIMARY KEY(`myNodeNum`))",
         "fields": [
           {
             "fieldPath": "myNodeNum",
@@ -22,6 +22,11 @@
           {
             "fieldPath": "firmwareVersion",
             "columnName": "firmwareVersion",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bootloaderVersion",
+            "columnName": "bootloaderVersion",
             "affinity": "TEXT"
           },
           {
@@ -739,7 +744,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '51f5f6ebc6ef9d279deb9944746fad68')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5002fbc85d7f648104d6828449af299f')"
     ]
   }
 }

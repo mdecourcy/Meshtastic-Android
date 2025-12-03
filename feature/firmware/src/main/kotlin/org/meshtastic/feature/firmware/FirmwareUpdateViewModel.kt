@@ -165,6 +165,8 @@ constructor(
                                 address = address,
                                 showBootloaderWarning =
                                 deviceHardware.requiresBootloaderUpgradeForOta == true && !dismissed,
+                                firmwareVersion = ourNode.metadata?.firmwareVersion,
+                                bootloaderVersion = ourNode.metadata?.bootloaderVersion,
                             )
                     }
                 }

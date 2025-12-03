@@ -314,7 +314,12 @@ private fun ColumnScope.ReadyState(
     DeviceHardwareImage(device, Modifier.size(150.dp))
     Spacer(Modifier.height(24.dp))
 
-    DeviceInfoCard(device, state.release)
+    DeviceInfoCard(
+        deviceHardware = device,
+        release = state.release,
+        currentFirmware = state.firmwareVersion,
+        currentBootloader = state.bootloaderVersion,
+    )
 
     if (state.showBootloaderWarning) {
         Spacer(Modifier.height(16.dp))
@@ -460,7 +465,12 @@ private fun ReleaseNotesCard(releaseNotes: String) {
 }
 
 @Composable
-private fun DeviceInfoCard(deviceHardware: DeviceHardware, release: FirmwareRelease?) {
+private fun DeviceInfoCard(
+    deviceHardware: DeviceHardware,
+    release: FirmwareRelease?,
+    currentFirmware: String? = null,
+    currentBootloader: String? = null,
+) {
     val target = deviceHardware.hwModelSlug.ifEmpty { deviceHardware.platformioTarget }
 
     ElevatedCard(
@@ -479,6 +489,25 @@ private fun DeviceInfoCard(deviceHardware: DeviceHardware, release: FirmwareRele
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            if (currentFirmware != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Current Firmware: $currentFirmware",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (currentBootloader != null && currentBootloader != "unknown") {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Bootloader: $currentBootloader",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
             Spacer(Modifier.height(4.dp))
             val releaseTitle = release?.title ?: stringResource(Res.string.firmware_update_unknown_release)
             Text(

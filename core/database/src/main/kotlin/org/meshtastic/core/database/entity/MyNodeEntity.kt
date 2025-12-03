@@ -26,6 +26,7 @@ data class MyNodeEntity(
     @PrimaryKey(autoGenerate = false) val myNodeNum: Int,
     val model: String?,
     val firmwareVersion: String?,
+    val bootloaderVersion: String?,
     val couldUpdate: Boolean, // this application contains a software load we _could_ install if you want
     val shouldUpdate: Boolean, // this device has old firmware
     val currentPacketId: Long,
@@ -44,6 +45,7 @@ data class MyNodeEntity(
         hasGPS = false,
         model = model,
         firmwareVersion = firmwareVersion,
+        bootloaderVersion = bootloaderVersion,
         couldUpdate = couldUpdate,
         shouldUpdate = shouldUpdate,
         currentPacketId = currentPacketId,
