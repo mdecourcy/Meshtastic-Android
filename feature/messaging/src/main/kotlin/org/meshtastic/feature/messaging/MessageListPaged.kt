@@ -131,6 +131,7 @@ internal fun MessageListPaged(
         ReactionDialog(
             reactions = reactions,
             nodes = state.nodes,
+            ourNode = state.ourNode,
             onDismiss = { showReactionDialog = null },
             onNavigateToNode = handlers.onClickChip,
         )

@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import org.meshtastic.core.database.entity.Reaction
 import org.meshtastic.core.database.model.Node
+import org.meshtastic.core.model.DataPacket
 import org.meshtastic.core.model.util.getShortDateTime
 import org.meshtastic.core.strings.Res
 import org.meshtastic.core.strings.hops_away_template
@@ -117,12 +118,14 @@ private fun reduceEmojis(emojis: List<String>): Map<String, Int> = emojis.groupi
 internal fun ReactionDialog(
     reactions: List<Reaction>,
     nodes: List<Node> = emptyList(),
+    ourNode: Node? = null,
     onDismiss: () -> Unit = {},
     onNavigateToNode: (Node) -> Unit = {},
 ) = BottomSheetDialog(onDismiss = onDismiss, modifier = Modifier.fillMaxHeight(fraction = .3f)) {
     ReactionDialogContent(
         reactions = reactions,
         nodes = nodes,
+        ourNode = ourNode,
         onDismiss = onDismiss,
         onNavigateToNode = onNavigateToNode,
     )
@@ -132,6 +135,7 @@ internal fun ReactionDialog(
 private fun ReactionDialogContent(
     reactions: List<Reaction>,
     nodes: List<Node>,
+    ourNode: Node?,
     onDismiss: () -> Unit,
     onNavigateToNode: (Node) -> Unit,
 ) {
@@ -141,7 +145,13 @@ private fun ReactionDialogContent(
 
     EmojiFilterRow(groupedEmojis, selectedEmoji) { selectedEmoji = it }
     HorizontalDivider(Modifier.padding(vertical = 8.dp))
-    ReactionList(filteredReactions, nodes, onNavigateToNode, onDismiss)
+    ReactionList(
+        reactions = filteredReactions,
+        nodes = nodes,
+        ourNode = ourNode,
+        onNavigateToNode = onNavigateToNode,
+        onDismiss = onDismiss,
+    )
 }
 
 @Composable
@@ -169,15 +179,13 @@ private fun EmojiFilterRow(
 private fun ReactionList(
     reactions: List<Reaction>,
     nodes: List<Node>,
+    ourNode: Node?,
     onNavigateToNode: (Node) -> Unit,
     onDismiss: () -> Unit,
 ) {
     LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         items(reactions) { reaction ->
-            val node =
-                nodes.firstOrNull { it.user.id == reaction.user.id }
-                    ?: nodes.firstOrNull { it.user.longName == reaction.user.longName }
-                    ?: nodes.firstOrNull { it.user.shortName == reaction.user.shortName }
+            val node = resolveNodeForReaction(reaction, nodes, ourNode)
             Column(
                 modifier =
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp).clickable(enabled = node != null) {
@@ -192,7 +200,8 @@ private fun ReactionList(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = reaction.user.longName, style = MaterialTheme.typography.titleMedium)
+                    val displayName = (node?.user ?: reaction.user).bestDisplayName()
+                    Text(text = displayName, style = MaterialTheme.typography.titleMedium)
                     Text(text = reaction.emoji, style = MaterialTheme.typography.titleLarge)
                 }
                 Row(
@@ -221,6 +230,24 @@ private fun ReactionList(
         }
     }
 }
+
+private fun resolveNodeForReaction(reaction: Reaction, nodes: List<Node>, ourNode: Node?): Node? =
+    when {
+        reaction.user.id == DataPacket.ID_LOCAL || reaction.user.longName.equals("local", ignoreCase = true) ->
+            ourNode
+        else ->
+            nodes.firstOrNull { it.user.id == reaction.user.id }
+                ?: nodes.firstOrNull { it.user.longName == reaction.user.longName }
+                ?: nodes.firstOrNull { it.user.shortName == reaction.user.shortName }
+    }
+
+private fun MeshProtos.User.bestDisplayName(): String =
+    when {
+        longName.isNotBlank() && !longName.equals("local", ignoreCase = true) -> longName
+        shortName.isNotBlank() -> shortName
+        id.isNotBlank() -> id
+        else -> longName.ifBlank { shortName }.ifBlank { id }
+    }
 
 @PreviewLightDark
 @Composable
