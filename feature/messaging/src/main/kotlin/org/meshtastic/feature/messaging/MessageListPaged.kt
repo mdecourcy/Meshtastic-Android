@@ -128,7 +128,14 @@ internal fun MessageListPaged(
     }
 
     var showReactionDialog by remember { mutableStateOf<List<Reaction>?>(null) }
-    showReactionDialog?.let { reactions -> ReactionDialog(reactions) { showReactionDialog = null } }
+    showReactionDialog?.let { reactions ->
+        ReactionDialog(
+            reactions = reactions,
+            nodes = state.nodes,
+            onDismiss = { showReactionDialog = null },
+            onNavigateToNode = handlers.onClickChip,
+        )
+    }
 
     val coroutineScope = rememberCoroutineScope()
 

@@ -54,6 +54,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import org.meshtastic.core.database.entity.Reaction
+import org.meshtastic.core.database.model.Node
 import org.meshtastic.core.model.util.getShortDateTime
 import org.meshtastic.core.strings.Res
 import org.meshtastic.core.strings.hops_away_template
@@ -114,7 +115,12 @@ internal fun ReactionRow(
 private fun reduceEmojis(emojis: List<String>): Map<String, Int> = emojis.groupingBy { it }.eachCount()
 
 @Composable
-internal fun ReactionDialog(reactions: List<Reaction>, onDismiss: () -> Unit = {}) =
+internal fun ReactionDialog(
+    reactions: List<Reaction>,
+    nodes: List<Node> = emptyList(),
+    onDismiss: () -> Unit = {},
+    onNavigateToNode: (Node) -> Unit = {},
+) =
     BottomSheetDialog(onDismiss = onDismiss, modifier = Modifier.fillMaxHeight(fraction = .3f)) {
         val groupedEmojis = reactions.groupBy { it.emoji }
         var selectedEmoji by remember { mutableStateOf<String?>(null) }
@@ -138,7 +144,21 @@ internal fun ReactionDialog(reactions: List<Reaction>, onDismiss: () -> Unit = {
 
         LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(filteredReactions) { reaction ->
-                Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+                val node =
+                    nodes.firstOrNull { it.user.id == reaction.user.id }
+                        ?: nodes.firstOrNull { it.user.longName == reaction.user.longName }
+                        ?: nodes.firstOrNull { it.user.shortName == reaction.user.shortName }
+                Column(
+                    modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                        .clickable(enabled = node != null) {
+                            node?.let {
+                                onNavigateToNode(it)
+                                onDismiss()
+                            }
+                        },
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
