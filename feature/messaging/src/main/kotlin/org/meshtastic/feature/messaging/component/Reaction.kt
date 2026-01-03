@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Meshtastic LLC
+ * Copyright (c) 2025-2026 Meshtastic LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 package org.meshtastic.feature.messaging.component
 
 import androidx.compose.animation.AnimatedVisibility
@@ -120,79 +119,108 @@ internal fun ReactionDialog(
     nodes: List<Node> = emptyList(),
     onDismiss: () -> Unit = {},
     onNavigateToNode: (Node) -> Unit = {},
-) =
-    BottomSheetDialog(onDismiss = onDismiss, modifier = Modifier.fillMaxHeight(fraction = .3f)) {
-        val groupedEmojis = reactions.groupBy { it.emoji }
-        var selectedEmoji by remember { mutableStateOf<String?>(null) }
-        val filteredReactions = selectedEmoji?.let { groupedEmojis[it] ?: emptyList() } ?: reactions
+) = BottomSheetDialog(onDismiss = onDismiss, modifier = Modifier.fillMaxHeight(fraction = .3f)) {
+    ReactionDialogContent(
+        reactions = reactions,
+        nodes = nodes,
+        onDismiss = onDismiss,
+        onNavigateToNode = onNavigateToNode,
+    )
+}
 
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            items(groupedEmojis.entries.toList()) { (emoji, reactions) ->
-                Text(
-                    text = "$emoji${reactions.size}",
-                    modifier =
-                    Modifier.clip(CircleShape)
-                        .background(if (selectedEmoji == emoji) Color.Gray else Color.Transparent)
-                        .padding(8.dp)
-                        .clickable { selectedEmoji = if (selectedEmoji == emoji) null else emoji },
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+@Composable
+private fun ReactionDialogContent(
+    reactions: List<Reaction>,
+    nodes: List<Node>,
+    onDismiss: () -> Unit,
+    onNavigateToNode: (Node) -> Unit,
+) {
+    val groupedEmojis = reactions.groupBy { it.emoji }
+    var selectedEmoji by remember { mutableStateOf<String?>(null) }
+    val filteredReactions = selectedEmoji?.let { groupedEmojis[it] ?: emptyList() } ?: reactions
+
+    EmojiFilterRow(groupedEmojis, selectedEmoji) { selectedEmoji = it }
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    ReactionList(filteredReactions, nodes, onNavigateToNode, onDismiss)
+}
+
+@Composable
+private fun EmojiFilterRow(
+    groupedEmojis: Map<String, List<Reaction>>,
+    selectedEmoji: String?,
+    onSelectEmoji: (String?) -> Unit,
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        items(groupedEmojis.entries.toList()) { (emoji, reactions) ->
+            Text(
+                text = "$emoji${reactions.size}",
+                modifier =
+                Modifier.clip(CircleShape)
+                    .background(if (selectedEmoji == emoji) Color.Gray else Color.Transparent)
+                    .padding(8.dp)
+                    .clickable { onSelectEmoji(if (selectedEmoji == emoji) null else emoji) },
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
+    }
+}
 
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-        LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            items(filteredReactions) { reaction ->
-                val node =
-                    nodes.firstOrNull { it.user.id == reaction.user.id }
-                        ?: nodes.firstOrNull { it.user.longName == reaction.user.longName }
-                        ?: nodes.firstOrNull { it.user.shortName == reaction.user.shortName }
-                Column(
-                    modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 8.dp)
-                        .clickable(enabled = node != null) {
-                            node?.let {
-                                onNavigateToNode(it)
-                                onDismiss()
-                            }
-                        },
+@Composable
+private fun ReactionList(
+    reactions: List<Reaction>,
+    nodes: List<Node>,
+    onNavigateToNode: (Node) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        items(reactions) { reaction ->
+            val node =
+                nodes.firstOrNull { it.user.id == reaction.user.id }
+                    ?: nodes.firstOrNull { it.user.longName == reaction.user.longName }
+                    ?: nodes.firstOrNull { it.user.shortName == reaction.user.shortName }
+            Column(
+                modifier =
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp).clickable(enabled = node != null) {
+                    node?.let {
+                        onNavigateToNode(it)
+                        onDismiss()
+                    }
+                },
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(text = reaction.user.longName, style = MaterialTheme.typography.titleMedium)
-                        Text(text = reaction.emoji, style = MaterialTheme.typography.titleLarge)
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val isLocalOrPreDbUpdateReaction = (reaction.rssi == 0)
-                        if (!isLocalOrPreDbUpdateReaction) {
-                            if (reaction.hopsAway == 0) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Snr(reaction.snr)
-                                    Rssi(reaction.rssi)
-                                }
-                            } else {
-                                Text(
-                                    text = stringResource(Res.string.hops_away_template, reaction.hopsAway),
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
+                    Text(text = reaction.user.longName, style = MaterialTheme.typography.titleMedium)
+                    Text(text = reaction.emoji, style = MaterialTheme.typography.titleLarge)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val isLocalOrPreDbUpdateReaction = (reaction.rssi == 0)
+                    if (!isLocalOrPreDbUpdateReaction) {
+                        if (reaction.hopsAway == 0) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Snr(reaction.snr)
+                                Rssi(reaction.rssi)
                             }
+                        } else {
+                            Text(
+                                text = stringResource(Res.string.hops_away_template, reaction.hopsAway),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
                         }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(text = getShortDateTime(reaction.timestamp), style = MaterialTheme.typography.labelSmall)
                     }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(text = getShortDateTime(reaction.timestamp), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
     }
+}
 
 @PreviewLightDark
 @Composable
