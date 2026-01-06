@@ -117,6 +117,8 @@ internal fun MessageListPaged(
             nodes = state.nodes,
             ourNode = state.ourNode,
             resendOption = message.status?.equals(MessageStatus.ERROR) ?: false,
+            retryCount = message.retryCount,
+            maxRetries = 5,
             onResend = {
                 handlers.onDeleteMessages(listOf(message.uuid))
                 handlers.onSendMessage(message.text, state.contactKey)
@@ -443,6 +445,8 @@ internal fun MessageStatusDialog(
     nodes: List<Node>,
     ourNode: Node?,
     resendOption: Boolean,
+    retryCount: Int,
+    maxRetries: Int,
     onResend: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -461,6 +465,8 @@ internal fun MessageStatusDialog(
         text = text,
         relayNodeName = relayNodeName,
         relays = message.relays,
+        retryCount = retryCount,
+        maxRetries = maxRetries,
         onConfirm = onResend,
         onDismiss = onDismiss,
     )
