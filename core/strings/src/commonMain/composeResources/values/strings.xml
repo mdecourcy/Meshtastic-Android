@@ -1137,4 +1137,18 @@
     <string name="compass_uncertainty_unknown">Estimated area: unknown accuracy</string>
     <string name="mark_as_read">Mark as read</string>
     <string name="now">Now</string>
+
+    <!-- Message Filter -->
+    <string name="filter_settings">Message Filter</string>
+    <string name="filter_enable">Enable Filtering</string>
+    <string name="filter_enable_summary">Hide messages containing filter words</string>
+    <string name="filter_words">Filter Words</string>
+    <string name="filter_add_word">Add word</string>
+    <string name="filter_regex_pattern">Regex pattern</string>
+    <string name="filter_whole_word">Whole word match</string>
+    <string name="filter_filtered_count">%1$d filtered</string>
+    <string name="filter_show_filtered">Show filtered messages</string>
+    <string name="filter_hide_filtered">Hide filtered messages</string>
+    <string name="filter_message_label">Filtered</string>
+    <string name="filter_disable_for_contact">Disable filter for this contact</string>
 </resources>
