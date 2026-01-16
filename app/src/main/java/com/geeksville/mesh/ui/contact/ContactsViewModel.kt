@@ -188,9 +188,7 @@ constructor(
     fun getContactSettings() = packetRepository.getContactSettings()
 
     fun setContactFilteringDisabled(contactKey: String, disabled: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            packetRepository.setContactFilteringDisabled(contactKey, disabled)
-        }
+        viewModelScope.launch(Dispatchers.IO) { packetRepository.setContactFilteringDisabled(contactKey, disabled) }
     }
 
     /**
